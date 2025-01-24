@@ -1,7 +1,3 @@
-Here’s a README file for your project:
-
----
-
 # Map Coordinate Selector
 
 This project allows users to draw coordinates on a map and fetches the location details of the selected area. The user can interactively select an area on the map, and the application retrieves and displays the corresponding location details.
@@ -75,7 +71,3 @@ Feel free to contribute to this project by submitting issues or pull requests. H
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-Let me know if you want to customize it further!
