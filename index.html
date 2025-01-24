@@ -1,0 +1,135 @@
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key={your-api-key}&callback=initMap&libraries=drawing,places"
+    loading="async"></script>
+<button id="drawButton">Enable Drawing</button>
+<button id="newDrawButton">New Drawing</button>
+<div id="map" style="height: 400px;"></div>
+<div id="areaDisplay"></div>
+<script>
+    let map;
+    let drawingManager;
+    let placesService;
+    let nearbyPlacesArray = [];
+    let drawnPolygons = []; // Added array to store drawn polygons
+    
+    function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 0, lng: 0 },
+            zoom: 2,
+        });
+    
+        drawingManager = new google.maps.drawing.DrawingManager({
+            drawingMode: null,
+            drawingControl: true,
+        });
+    
+        drawingManager.setMap(map);
+    
+        placesService = new google.maps.places.PlacesService(map);
+        console.log(placesService);
+
+        // Button click event
+        document.getElementById("drawButton").addEventListener("click", function () {
+            toggleDrawing();
+        });
+
+        document.getElementById("newDrawButton").addEventListener("click", function () {
+            clearDrawings();
+        });
+
+        // Overlay complete event
+        google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
+            if (event.type === 'polyline') {
+                const path = event.overlay.getPath();
+    
+                // Change drawing mode to null (normal mode)
+                toggleDrawing();
+    
+                // Fill the drawn area with dark blue color
+                const polygon = new google.maps.Polygon({
+                    paths: path.getArray(),
+                    strokeColor: "#0000FF",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
+                    fillColor: "#0000FF",
+                    fillOpacity: 0.35,
+                });
+    
+                // Set the polygon on the map
+                polygon.setMap(map);
+    
+                // Store the drawn polygon in the array
+                drawnPolygons.push(polygon);    
+
+                // Display the area coordinates in the console
+                console.log(`Area Coordinates: ${JSON.stringify(path.getArray())}`);
+
+                // Perform a nearby search based on the first point of the drawn area
+                const centerPoint = path.getArray()[0];
+                performNearbySearch(centerPoint);
+            }
+        });
+    }
+
+    function toggleDrawing() {
+        if (drawingManager.getDrawingMode()) {
+            drawingManager.setDrawingMode(null);
+        } else {
+            drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYLINE);
+        }
+    }
+
+    function clearDrawings() {
+        drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYLINE);
+    
+        // Clear drawings from the map.data layer
+        map.data.forEach(function (feature) {
+            map.data.remove(feature);
+        });
+    
+        // Remove drawn polygons from the map
+        drawnPolygons.forEach(function (polygon) {
+            polygon.setMap(null);
+        });
+
+        drawnPolygons = [];
+        
+    
+        nearbyPlacesArray = [];
+        document.getElementById("areaDisplay").innerHTML = '<h3>Nearby Places:</h3>';
+    }
+    
+
+    function performNearbySearch(center) {
+        // Define a radius for the nearby search (adjust as needed)
+        const radius = 5000; // 5000 meters (5 km)
+
+        const request = {
+            location: center,
+            radius: radius,
+            type: 'establishment' // You can adjust the type of places you are interested in
+        };
+
+        placesService.nearbySearch(request, function (results, status) {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                displayNearbyPlaces(results);
+            } else {
+                console.error('Nearby Search failed:', status);
+            }
+        });
+    }
+
+    function displayNearbyPlaces(places) {
+        console.log('New Places');
+        // Display only the names of nearby places
+        const areaDisplay = document.getElementById("areaDisplay");
+        areaDisplay.innerHTML = '<h3>Nearby Places:</h3>';
+        nearbyPlacesArray = [];
+        places.forEach(place => {
+            areaDisplay.innerHTML += `<p>${place.name}</p>`;
+            nearbyPlacesArray.push(place.name);
+        });
+        console.log('Nearby Places Array:', nearbyPlacesArray);
+    }
+
+</script>
